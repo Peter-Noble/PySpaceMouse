@@ -25,6 +25,7 @@ ButtonSpec = namedtuple("ButtonSpec", ["channel", "byte", "bit"])
 
 ## Simple HID code to read data from the 3dconnexion devices
 
+
 # convert two 8 bit bytes to a signed 16 bit integer
 def to_int16(y1, y2):
     x = (y1) | (y2 << 8)
@@ -34,9 +35,7 @@ def to_int16(y1, y2):
 
 
 # tuple for 6DOF results
-SpaceNavigator = namedtuple(
-    "SpaceNavigator", ["t", "x", "y", "z", "roll", "pitch", "yaw", "buttons"]
-)
+SpaceNavigator = namedtuple("SpaceNavigator", ["t", "x", "y", "z", "roll", "pitch", "yaw", "buttons"])
 
 
 class ButtonState(list):
@@ -47,9 +46,7 @@ class ButtonState(list):
 class ButtonCallback:
     """Register new button callback"""
 
-    def __init__(
-            self, buttons: Union[int, List[int]], callback: Callable[[int, int], None]
-    ):
+    def __init__(self, buttons: Union[int, List[int]], callback: Callable[[int, int], None]):
         self.buttons = buttons
         self.callback = callback
 
@@ -58,12 +55,12 @@ class DofCallback:
     """Register new DoF callback"""
 
     def __init__(
-            self,
-            axis: str,
-            callback: Callable[[int], None],
-            sleep: float = 0.0,
-            callback_minus: Callable[[int], None] = None,
-            filter: float = 0.0
+        self,
+        axis: str,
+        callback: Callable[[int], None],
+        sleep: float = 0.0,
+        callback_minus: Callable[[int], None] = None,
+        filter: float = 0.0,
     ):
         self.axis = axis
         self.callback = callback
@@ -76,13 +73,12 @@ class Config:
     """Create new config file with correct structure and check that the configuration has correct parts"""
 
     def __init__(
-            self,
-            callback: Callable[[object], None] = None,
-            dof_callback: Callable[[object], None] = None,
-            dof_callback_arr: List[DofCallback] = None,
-            button_callback: Callable[[object, list], None] = None,
-            button_callback_arr: List[ButtonCallback] = None,
-
+        self,
+        callback: Callable[[object], None] = None,
+        dof_callback: Callable[[object], None] = None,
+        dof_callback_arr: List[DofCallback] = None,
+        button_callback: Callable[[object, list], None] = None,
+        button_callback_arr: List[ButtonCallback] = None,
     ):
         check_config(callback, dof_callback, dof_callback_arr, button_callback, button_callback_arr)
         self.callback = callback
@@ -95,9 +91,7 @@ class Config:
 class DeviceSpec(object):
     """Holds the specification of a single 3Dconnexion device"""
 
-    def __init__(
-            self, name, hid_id, led_id, mappings, button_mapping, axis_scale=350.0
-    ):
+    def __init__(self, name, hid_id, led_id, mappings, button_mapping, axis_scale=350.0):
         self.name = name
         self.hid_id = hid_id
         self.led_id = led_id
@@ -137,7 +131,7 @@ class DeviceSpec(object):
         self.button_callback = None
         self.button_callback_arr = None
         self.set_nonblocking_loop = True
-        
+
     def __get_num_bytes_to_read(self):
         byte_indices = []
         for value in self.__mappings.values():
@@ -156,7 +150,7 @@ class DeviceSpec(object):
     @property
     def mappings(self):
         return self.__mappings
-    
+
     @mappings.setter
     def mappings(self, val):
         self.__mappings = val
@@ -186,9 +180,7 @@ class DeviceSpec(object):
         self.version_number = self.device.release_number
         # doesn't seem to work on 3dconnexion devices...
         # serial number will be a byte string, we convert to a hex id
-        self.serial_number = "".join(
-            ["%02X" % ord(char) for char in self.device.serial_number]
-        )
+        self.serial_number = "".join(["%02X" % ord(char) for char in self.device.serial_number])
 
     def set_led(self, state):
         """Set the LED state to state (True or False)"""
@@ -213,7 +205,7 @@ class DeviceSpec(object):
         # read bytes from SpaceMouse
         ret = self.device.read(self.__bytes_to_read)
         # test for nonblocking read
-        if (ret):
+        if ret:
             self.process(ret)
         return self.tuple_state
 
@@ -243,20 +235,16 @@ class DeviceSpec(object):
         for name, (chan, b1, b2, flip) in self.__mappings.items():
             if data[0] == chan:
                 dof_changed = True
-                #check if b1 or b2 is over the length of the data
+                # check if b1 or b2 is over the length of the data
                 if b1 < len(data) and b2 < len(data):
-                    self.dict_state[name] = (
-                            flip * to_int16(data[b1], data[b2]) / float(self.axis_scale)
-                    )
+                    self.dict_state[name] = flip * to_int16(data[b1], data[b2]) / float(self.axis_scale)
 
         for button_index, (chan, byte, bit) in enumerate(self.button_mapping):
             if data[0] == chan:
                 button_changed = True
                 # update the button vector
                 mask = 1 << bit
-                self.dict_state["buttons"][button_index] = (
-                    1 if (data[byte] & mask) != 0 else 0
-                )
+                self.dict_state["buttons"][button_index] = 1 if (data[byte] & mask) != 0 else 0
 
         self.dict_state["t"] = high_acc_clock()
 
@@ -312,8 +300,9 @@ class DeviceSpec(object):
                         run = False
                 # call callback
                 if run:
-                    block_button_callback.callback(self.tuple_state, self.tuple_state.buttons,
-                                                   block_button_callback.buttons)
+                    block_button_callback.callback(
+                        self.tuple_state, self.tuple_state.buttons, block_button_callback.buttons
+                    )
 
     def config_set(self, config: Config):
         """Set new configuration of mouse from Config class"""
@@ -324,8 +313,9 @@ class DeviceSpec(object):
         self.button_callback = config.button_callback
         self.button_callback_arr = config.button_callback_arr
 
-    def config_set_sep(self, callback=None, dof_callback=None, dof_callback_arr=None, button_callback=None,
-                       button_callback_arr=None):
+    def config_set_sep(
+        self, callback=None, dof_callback=None, dof_callback_arr=None, button_callback=None, button_callback_arr=None
+    ):
         """Set new configuration of mouse and check that the configuration has correct parts"""
 
         check_config(callback, dof_callback, dof_callback_arr, button_callback, button_callback_arr)
@@ -445,7 +435,7 @@ device_specs = {
     "SpaceMouse Pro": DeviceSpec(
         name="SpaceMouse Pro",
         # vendor ID and product ID
-        hid_id=[0x46D, 0xC62b],
+        hid_id=[0x46D, 0xC62B],
         led_id=[0x8, 0x4B],
         mappings={
             "x": AxisSpec(channel=1, byte1=1, byte2=2, scale=1),
@@ -542,27 +532,27 @@ device_specs = {
             "yaw": AxisSpec(channel=2, byte1=5, byte2=6, scale=1),
         },
         button_mapping=[
-            ButtonSpec(channel=3, byte=1, bit=0), # 1
-            ButtonSpec(channel=3, byte=1, bit=1), # 2
-            ButtonSpec(channel=3, byte=1, bit=2), # 3
-            ButtonSpec(channel=3, byte=1, bit=3), # 4
-            ButtonSpec(channel=3, byte=1, bit=4), # 5
-            ButtonSpec(channel=3, byte=1, bit=5), # 6
-            ButtonSpec(channel=3, byte=1, bit=6), # T
-            ButtonSpec(channel=3, byte=1, bit=7), # L
-            ButtonSpec(channel=3, byte=2, bit=0), # R
-            ButtonSpec(channel=3, byte=2, bit=1), # F
-            ButtonSpec(channel=3, byte=2, bit=2), # Esc
-            ButtonSpec(channel=3, byte=2, bit=3), # Alt
-            ButtonSpec(channel=3, byte=2, bit=4), # Shift
-            ButtonSpec(channel=3, byte=2, bit=5), # Ctrl
-            ButtonSpec(channel=3, byte=2, bit=6), # Fit
-            ButtonSpec(channel=3, byte=2, bit=7), # Panel
-            ButtonSpec(channel=3, byte=3, bit=0), # Zoom -
-            ButtonSpec(channel=3, byte=3, bit=1), # Zoom +
-            ButtonSpec(channel=3, byte=3, bit=2), # Dom
-            ButtonSpec(channel=3, byte=3, bit=3), # 3D Lock
-            ButtonSpec(channel=3, byte=3, bit=4), # Config
+            ButtonSpec(channel=3, byte=1, bit=0),  # 1
+            ButtonSpec(channel=3, byte=1, bit=1),  # 2
+            ButtonSpec(channel=3, byte=1, bit=2),  # 3
+            ButtonSpec(channel=3, byte=1, bit=3),  # 4
+            ButtonSpec(channel=3, byte=1, bit=4),  # 5
+            ButtonSpec(channel=3, byte=1, bit=5),  # 6
+            ButtonSpec(channel=3, byte=1, bit=6),  # T
+            ButtonSpec(channel=3, byte=1, bit=7),  # L
+            ButtonSpec(channel=3, byte=2, bit=0),  # R
+            ButtonSpec(channel=3, byte=2, bit=1),  # F
+            ButtonSpec(channel=3, byte=2, bit=2),  # Esc
+            ButtonSpec(channel=3, byte=2, bit=3),  # Alt
+            ButtonSpec(channel=3, byte=2, bit=4),  # Shift
+            ButtonSpec(channel=3, byte=2, bit=5),  # Ctrl
+            ButtonSpec(channel=3, byte=2, bit=6),  # Fit
+            ButtonSpec(channel=3, byte=2, bit=7),  # Panel
+            ButtonSpec(channel=3, byte=3, bit=0),  # Zoom -
+            ButtonSpec(channel=3, byte=3, bit=1),  # Zoom +
+            ButtonSpec(channel=3, byte=3, bit=2),  # Dom
+            ButtonSpec(channel=3, byte=3, bit=3),  # 3D Lock
+            ButtonSpec(channel=3, byte=3, bit=4),  # Config
         ],
         axis_scale=350.0,
     ),
@@ -664,10 +654,7 @@ def list_devices():
             devices.extend(
                 device_name
                 for device_name, spec in device_specs.items()
-                if (
-                    device.vendor_id == spec.hid_id[0]
-                    and device.product_id == spec.hid_id[1]
-                )
+                if (device.vendor_id == spec.hid_id[0] and device.product_id == spec.hid_id[1])
             )
     return devices
 
@@ -681,19 +668,28 @@ def openCfg(config: Config, set_nonblocking_loop: bool = True, device=None, Devi
         None if the device could not be opened
     """
 
-    return open(config.callback, config.dof_callback, config.dof_callback_arr, config.button_callback,
-                config.button_callback_arr, set_nonblocking_loop, device, DeviceNumber)
+    return open(
+        config.callback,
+        config.dof_callback,
+        config.dof_callback_arr,
+        config.button_callback,
+        config.button_callback_arr,
+        set_nonblocking_loop,
+        device,
+        DeviceNumber,
+    )
 
 
 def open(
-        callback: Callable[[object], None] = None,
-        dof_callback: Callable[[object], None] = None,
-        dof_callback_arr: List[DofCallback] = None,
-        button_callback: Callable[[object, list], None] = None,
-        button_callback_arr: List[ButtonCallback] = None,
-        set_nonblocking_loop=True,
-        device: str = None,
-        DeviceNumber=0) -> Union[None, DeviceSpec]:
+    callback: Callable[[object], None] = None,
+    dof_callback: Callable[[object], None] = None,
+    dof_callback_arr: List[DofCallback] = None,
+    button_callback: Callable[[object, list], None] = None,
+    button_callback_arr: List[ButtonCallback] = None,
+    set_nonblocking_loop=True,
+    device: str = None,
+    DeviceNumber=0,
+) -> Union[None, DeviceSpec]:
     """
     Open a 3D space navigator device. Makes this device the current active device, which enables the module-level read() and close()
     calls. For multiple devices, use the read() and close() calls on the returned object instead, and don't use the module-level calls.
@@ -772,8 +768,9 @@ def open(
     return None
 
 
-def check_config(callback=None, dof_callback=None, dof_callback_arr=None, button_callback=None,
-                 button_callback_arr=None):
+def check_config(
+    callback=None, dof_callback=None, dof_callback_arr=None, button_callback=None, button_callback_arr=None
+):
     """Check that the input configuration has the correct components.
     Raise an exception if it encounters incorrect component.
     """
@@ -810,22 +807,24 @@ def check_button_callback_arr(button_callback_arr: List[ButtonCallback]) -> List
             raise Exception(f"'ButtonCallback[{num}]:callback' is not callable")
     return button_callback_arr
 
+
 class DofCallback:
     """Register new DoF callback"""
 
     def __init__(
-            self,
-            axis: str,
-            callback: Callable[[int], None],
-            sleep: float = 0.0,
-            callback_minus: Callable[[int], None] = None,
-            filter: float = 0.0
+        self,
+        axis: str,
+        callback: Callable[[int], None],
+        sleep: float = 0.0,
+        callback_minus: Callable[[int], None] = None,
+        filter: float = 0.0,
     ):
         self.axis = axis
         self.callback = callback
         self.sleep = sleep
         self.callback_minus = callback_minus
         self.filter = filter
+
 
 def check_dof_callback_arr(dof_callback_arr: List[DofCallback]) -> List[DofCallback]:
     """Check that the dof_callback_arr has the correct components.
@@ -837,8 +836,7 @@ def check_dof_callback_arr(dof_callback_arr: List[DofCallback]) -> List[DofCallb
             raise Exception(f"'DofCallback[{num}]' is not instance of 'DofCallback'")
             # has the correct axis name
         if dof_call.axis not in ["x", "y", "z", "roll", "pitch", "yaw"]:
-            raise Exception(
-                f"'DofCallback[{num}]:axis' is not string from ['x', 'y', 'z', 'roll', 'pitch', 'yaw']")
+            raise Exception(f"'DofCallback[{num}]:axis' is not string from ['x', 'y', 'z', 'roll', 'pitch', 'yaw']")
 
             # is callback callable
         if not callable(dof_call.callback):
@@ -849,9 +847,7 @@ def check_dof_callback_arr(dof_callback_arr: List[DofCallback]) -> List[DofCallb
             raise Exception(f"'DofCallback[{num}]:sleep' is not type float")
 
             # is callback_minus callable
-        if not dof_call.callback_minus or not callable(
-            dof_call.callback_minus
-        ):
+        if not dof_call.callback_minus or not callable(dof_call.callback_minus):
             raise Exception(f"'DofCallback[{num}]:callback_minus' is not callable")
 
             # is filter type float
@@ -867,8 +863,9 @@ def config_set(config: Config):
         _active_device.config_set(config)
 
 
-def config_set_sep(callback=None, dof_callback=None, dof_callback_arr=None, button_callback=None,
-                   button_callback_arr=None):
+def config_set_sep(
+    callback=None, dof_callback=None, dof_callback_arr=None, button_callback=None, button_callback_arr=None
+):
     """Set new configuration of mouse and check that the configuration has correct parts"""
 
     if _active_device is not None:
@@ -887,14 +884,7 @@ def print_state(state):
     Print all axis to output
     """
     if state:
-        print(
-            " ".join(
-                [
-                    "%4s %+.2f" % (k, getattr(state, k))
-                    for k in ["x", "y", "z", "roll", "pitch", "yaw", "t"]
-                ]
-            )
-        )
+        print(" ".join(["%4s %+.2f" % (k, getattr(state, k)) for k in ["x", "y", "z", "roll", "pitch", "yaw", "t"]]))
 
 
 def print_buttons(state, buttons):
@@ -902,6 +892,9 @@ def print_buttons(state, buttons):
     Print all buttons to output
     """
     # simple default button callback
+    print((("[" + " ".join(["%2d, " % buttons[k] for k in range(len(buttons))])) + "]"))
+
+
 def toggle_led(state, buttons):
     print("".join(["buttons=", str(buttons)]))
     # Switch on the led on left push, off on right push
@@ -921,10 +914,8 @@ if __name__ == "__main__":
     def butt_0(state, buttons, pressed_buttons):
         print("Button 0")
 
-
     def butt_2_3(state, buttons, pressed_buttons):
         print("Button 2 and 3")
-
 
     button_callbacks_arr = [
         ButtonCallback([0], butt_0),
