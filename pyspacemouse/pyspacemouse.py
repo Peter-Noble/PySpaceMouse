@@ -190,14 +190,10 @@ class DeviceSpec(object):
             ["%02X" % ord(char) for char in self.device.serial_number]
         )
 
-    # def set_led(self, state):
-    #     """Set the LED state to state (True or False)"""
-    #     if self.connected:
-    #         reports = self.device.find_output_reports()
-    #         for report in reports:
-    #             if self.led_usage in report:
-    #                 report[self.led_usage] = state
-    #                 report.send()
+    def set_led(self, state):
+        """Set the LED state to state (True or False)"""
+        if self.connected:
+            self.device.write([state], report_id=4)
 
     def close(self):
         """Close the connection, if it is open"""
@@ -886,29 +882,18 @@ def print_buttons(state, buttons):
     Print all buttons to output
     """
     # simple default button callback
-    print(
-        (
-            (
-                "["
-                + " ".join(["%2d, " % buttons[k] for k in range(len(buttons))])
-            )
-            + "]"
-        )
-    )
+def toggle_led(state, buttons):
+    print("".join(["buttons=", str(buttons)]))
+    # Switch on the led on left push, off on right push
+    if buttons[0] == 1:
+        set_led(1)
+    if buttons[1] == 1:
+        set_led(0)
 
 
-# def toggle_led(state, buttons):
-#     print("".join(["buttons=", str(buttons)]))
-#     # Switch on the led on left push, off on right push
-#     if buttons[0] == 1:
-#         set_led(1)
-#     if buttons[1] == 1:
-#         set_led(0)
-#
-#
-# def set_led(state):
-#     if _active_device:
-#         _active_device.set_led(state)
+def set_led(state):
+    if _active_device:
+        _active_device.set_led(state)
 
 
 if __name__ == "__main__":
