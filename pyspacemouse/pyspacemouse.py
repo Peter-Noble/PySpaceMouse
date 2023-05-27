@@ -711,11 +711,10 @@ def open(
     global _active_device
 
     # if no device name specified, look for any matching device and choose the first
+    all_devices = set()
     if device is None:
-        all_devices = list_devices()
-        if len(all_devices) > 0:
-            device = all_devices[0]
-        else:
+        all_devices = set(list_devices())
+        if len(all_devices) == 0:
             raise Exception("No device connected/supported!")
 
     found_devices = []
@@ -723,10 +722,11 @@ def open(
     all_hids = hid.find()
     if all_hids:
         for dev in all_hids:
-            spec = device_specs[device]
-            if dev.vendor_id == spec.hid_id[0] and dev.product_id == spec.hid_id[1]:
-                found_devices.append({"Spec": spec, "HIDDevice": dev})
-                print(f"{device} found")
+            for device in all_devices:
+                spec = device_specs[device]
+                if dev.vendor_id == spec.hid_id[0] and dev.product_id == spec.hid_id[1]:
+                    found_devices.append({"Spec": spec, "HIDDevice": dev})
+                    print(f"{device} found")
 
     else:
         print("No HID devices detected")
@@ -763,6 +763,52 @@ def open(
 
             _active_device = new_device
             return new_device
+
+    print("Unknown error occured.")
+    return None
+
+
+def open_all() -> list[DeviceSpec]:
+    # if no device name specified, look for any matching device and choose the first
+    all_devices = set(list_devices())
+    if len(all_devices) == 0:
+        print("No device connected/supported!")
+        return []
+
+    found_devices = []
+    hid = Enumeration()
+    all_hids = hid.find()
+    if all_hids:
+        for dev in all_hids:
+            for device in all_devices:
+                spec = device_specs[device]
+                if dev.vendor_id == spec.hid_id[0] and dev.product_id == spec.hid_id[1]:
+                    found_devices.append({"Spec": spec, "HIDDevice": dev})
+                    print(f"{device} found")
+
+    else:
+        print("No HID devices detected")
+        return None
+
+    if not found_devices:
+        print("No supported devices found")
+        return None
+    else:
+        open_devices = []
+        for device in found_devices:
+            try:
+                spec = device["Spec"]
+                dev = device["HIDDevice"]
+                new_device = copy.deepcopy(spec)
+                new_device.device = dev
+                new_device.open()
+                new_device.set_nonblocking_loop = True
+                dev.set_nonblocking(True)
+                print(f"Opened device {spec.name}")
+                open_devices.append(new_device)
+            except Exception as e:
+                print(f"Tried to open device {spec.name} but couldn't with {e}")
+        return open_devices
 
     print("Unknown error occured.")
     return None
